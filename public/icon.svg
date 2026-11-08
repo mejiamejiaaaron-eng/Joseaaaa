@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#181818"/>
+      <stop offset="50%" stop-color="#121212"/>
+      <stop offset="100%" stop-color="#240808"/>
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa"/>
+      <stop offset="50%" stop-color="#1E90FF"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="pinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4081"/>
+      <stop offset="50%" stop-color="#E91E63"/>
+      <stop offset="100%" stop-color="#c2185b"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+  
+  <!-- Outer Decorative Ring -->
+  <circle cx="256" cy="256" r="190" fill="none" stroke="url(#blueGrad)" stroke-width="4" opacity="0.8"/>
+  <circle cx="256" cy="256" r="172" fill="none" stroke="url(#pinkGrad)" stroke-width="2.5" stroke-dasharray="8 6" opacity="0.9"/>
+
+  <!-- Glowing Emblem Center -->
+  <circle cx="256" cy="256" r="145" fill="#141414" stroke="#D32F2F" stroke-width="4" filter="url(#glow)"/>
+
+  <!-- Stylized Monogram "FA" -->
+  <!-- Letter F (Rosado #E91E63) -->
+  <path d="M 195 180 L 265 180 L 265 204 L 222 204 L 222 238 L 255 238 L 255 262 L 222 262 L 222 332 L 195 332 Z" fill="url(#pinkGrad)"/>
+  <!-- Letter A overlapping (Azul #1E90FF) -->
+  <path d="M 275 332 L 295 272 L 325 272 L 345 332 L 372 332 L 322 180 L 298 180 L 248 332 Z M 310 220 L 320 252 L 300 252 Z" fill="url(#blueGrad)"/>
+
+  <!-- Sparkles -->
+  <circle cx="256" cy="148" r="6" fill="#1E90FF"/>
+  <polygon points="256,128 260,138 270,140 262,146 264,156 256,150 248,156 250,146 242,140 252,138" fill="url(#pinkGrad)"/>
+
+  <!-- Bottom Arch Text -->
+  <text x="256" y="380" font-family="'Inter', sans-serif" font-size="22" font-weight="800" fill="#1E90FF" text-anchor="middle" letter-spacing="4">Spotyy_AA</text>
+</svg>

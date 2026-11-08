@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Spotyy Cold Storage - Cloudflare & Telegram</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              500: '#1db954',
+              600: '#1aa34a',
+            },
+            surface: {
+              900: '#0c0d10',
+              850: '#12141a',
+              800: '#181b24',
+              700: '#232733',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 15px rgba(29, 185, 84, 0.25); }
+      50% { box-shadow: 0 0 30px rgba(29, 185, 84, 0.5); }
+    }
+    .glow-effect {
+      animation: pulse-glow 3s infinite ease-in-out;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #2a2e3d;
+      border-radius: 999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #3c4257;
+    }
+  </style>
+</head>
+<body class="bg-surface-900 text-slate-100 min-h-screen font-sans flex flex-col selection:bg-brand-500 selection:text-black">
+
+  <!-- Header -->
+  <header class="border-b border-surface-700/60 bg-surface-850/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center text-black font-black text-xl shadow-lg shadow-brand-500/20">
+          <i class="fa-solid fa-cloud-arrow-up text-lg text-neutral-950"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight flex items-center gap-2">
+            Spotyy Cold Storage
+            <span class="text-[10px] font-semibold uppercase tracking-wider bg-surface-700 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">R2 + Telegram</span>
+          </h1>
+          <p class="text-xs text-slate-400">Almacenamiento híbrido para archivos MP3</p>
+        </div>
+      </div>
+      <button id="btnSettings" class="text-xs bg-surface-800 hover:bg-surface-700 border border-surface-700 px-3 py-1.5 rounded-lg text-slate-300 transition flex items-center gap-2">
+        <i class="fa-solid fa-server text-emerald-400"></i>
+        <span class="hidden sm:inline">Servidor Worker</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Contenedor Principal -->
+  <main class="max-w-4xl mx-auto px-4 py-6 flex-1 w-full flex flex-col gap-6">
+
+    <!-- Modal / Card de Configuración del Servidor Worker -->
+    <div id="workerConfigCard" class="bg-surface-850/90 border border-surface-700/80 rounded-2xl p-4 shadow-xl">
+      <div class="flex items-center justify-between mb-3">
+        <label class="text-xs font-semibold text-slate-300 flex items-center gap-2">
+          <i class="fa-solid fa-bolt text-yellow-400"></i>
+          URL base de tu Cloudflare Worker
+        </label>
+        <span class="text-[11px] text-slate-400">Guardado automáticamente</span>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-2">
+        <div class="relative flex-1">
+          <i class="fa-solid fa-link absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+          <input 
+            type="url" 
+            id="workerBaseUrl" 
+            placeholder="https://musica-bot.perezperezaaron61.workers.dev"
+            class="w-full pl-9 pr-3 py-2.5 bg-surface-800 border border-surface-700 rounded-xl text-sm focus:outline-none focus:border-brand-500 transition text-slate-100 placeholder-slate-500 font-mono text-xs"
+          >
+        </div>
+        <button id="btnSaveUrl" class="bg-surface-700 hover:bg-surface-650 hover:border-emerald-500/50 border border-surface-600 text-slate-200 text-xs font-medium px-4 py-2.5 rounded-xl transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-check text-brand-500"></i>
+          Guardar
+        </button>
+      </div>
+    </div>
+
+    <!-- Formulario de Subida -->
+    <div class="bg-surface-850 border border-surface-700/80 rounded-2xl p-5 sm:p-6 shadow-2xl relative overflow-hidden">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-base font-semibold text-slate-100 flex items-center gap-2">
+          <i class="fa-solid fa-music text-brand-500"></i>
+          Subir Canción a Cold Storage
+        </h2>
+        <span class="text-xs text-slate-400 bg-surface-800 px-2.5 py-1 rounded-md border border-surface-700">
+          Máx. 20 MB (API Telegram)
+        </span>
+      </div>
+
+      <form id="uploadForm" class="flex flex-col gap-4">
+        
+        <!-- Zona Dropzone de Archivo -->
+        <div 
+          id="dropzone" 
+          class="border-2 border-dashed border-surface-700 hover:border-brand-500/70 bg-surface-800/40 hover:bg-surface-800/80 rounded-xl p-6 text-center transition cursor-pointer flex flex-col items-center justify-center gap-2 group"
+        >
+          <input type="file" id="audioFileInput" accept="audio/*,.mp3,.m4a,.wav,.ogg" class="hidden">
+          <div class="w-12 h-12 rounded-full bg-surface-700/60 group-hover:bg-brand-500/20 group-hover:text-brand-500 text-slate-400 flex items-center justify-center transition">
+            <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
+          </div>
+          <div id="dropzoneText">
+            <p class="text-sm font-medium text-slate-200">Haz clic o arrastra tu archivo MP3 aquí</p>
+            <p class="text-xs text-slate-400 mt-0.5">Compatible con MP3, M4A, WAV, OGG (hasta 20 MB)</p>
+          </div>
+          <!-- Badge de Archivo Seleccionado -->
+          <div id="fileSelectedBadge" class="hidden mt-2 bg-surface-700 text-brand-500 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 border border-brand-500/30">
+            <i class="fa-solid fa-file-audio"></i>
+            <span id="fileName" class="text-slate-200 truncate max-w-[200px] sm:max-w-[320px]">cancion.mp3</span>
+            <span id="fileSize" class="text-slate-400 font-mono text-[11px]">(0 MB)</span>
+            <button type="button" id="btnRemoveFile" class="text-slate-400 hover:text-red-400 ml-1">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Campos de Metadatos: Título y Artista -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1.5">
+              Título de la Canción
+            </label>
+            <div class="relative">
+              <i class="fa-solid fa-heading absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+              <input 
+                type="text" 
+                id="titleInput" 
+                placeholder="Ej. Mi Canción Favorita"
+                class="w-full pl-9 pr-3 py-2 bg-surface-800 border border-surface-700 rounded-xl text-sm focus:outline-none focus:border-brand-500 transition text-slate-100 placeholder-slate-500"
+              >
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1.5">
+              Artista / Intérprete
+            </label>
+            <div class="relative">
+              <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+              <input 
+                type="text" 
+                id="performerInput" 
+                placeholder="Ej. Bad Bunny, Fuerza Regida..."
+                class="w-full pl-9 pr-3 py-2 bg-surface-800 border border-surface-700 rounded-xl text-sm focus:outline-none focus:border-brand-500 transition text-slate-100 placeholder-slate-500"
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Barra de Progreso (Oculta por defecto) -->
+        <div id="progressContainer" class="hidden flex flex-col gap-1.5 mt-2">
+          <div class="flex items-center justify-between text-xs text-slate-300">
+            <span id="progressStatus" class="flex items-center gap-2">
+              <i class="fa-solid fa-circle-notch fa-spin text-brand-500"></i>
+              Subiendo y respaldando en Telegram...
+            </span>
+            <span id="progressPercent" class="font-mono text-brand-500">0%</span>
+          </div>
+          <div class="w-full h-2 bg-surface-700 rounded-full overflow-hidden">
+            <div id="progressBar" class="h-full bg-gradient-to-r from-emerald-500 to-brand-500 w-0 transition-all duration-300"></div>
+          </div>
+        </div>
+
+        <!-- Botón de Envío (Botón Rojo) -->
+        <button 
+          type="submit" 
+          id="btnSubmit"
+          class="mt-2 w-full bg-gradient-to-r from-red-600 via-rose-600 to-red-500 hover:from-red-500 hover:via-rose-500 hover:to-red-400 active:scale-[0.99] text-white font-bold py-3.5 px-4 rounded-xl shadow-xl shadow-red-600/35 transition-all duration-200 flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:pointer-events-none border border-red-400/30 cursor-pointer"
+        >
+          <i class="fa-solid fa-cloud-arrow-up text-white text-base"></i>
+          <span class="tracking-wide">Subir a la nube</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- Alertas y Notificaciones -->
+    <div id="alertBox" class="hidden rounded-xl p-4 text-xs sm:text-sm border flex items-start gap-3">
+      <i id="alertIcon" class="fa-solid fa-circle-info text-base mt-0.5"></i>
+      <div class="flex-1">
+        <h4 id="alertTitle" class="font-bold mb-0.5">Título</h4>
+        <p id="alertMessage" class="text-slate-300 leading-relaxed"></p>
+      </div>
+      <button type="button" id="btnCloseAlert" class="text-slate-400 hover:text-slate-100">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Reproductor de Audio Activo (Aparece tras subir con éxito) -->
+    <div id="playerCard" class="hidden bg-surface-850 border border-brand-500/40 glow-effect rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-surface-700/60 pb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-500/20 to-purple-500/20 border border-brand-500/30 flex items-center justify-center text-brand-500 text-xl">
+            <i class="fa-solid fa-compact-disc fa-spin text-2xl"></i>
+          </div>
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-brand-500">Reproduciendo ahora</span>
+            <h3 id="currentTrackTitle" class="font-bold text-slate-100 text-sm sm:text-base leading-snug">Canción</h3>
+            <p id="currentTrackArtist" class="text-xs text-slate-400">Artista</p>
+          </div>
+        </div>
+        <span class="text-[11px] font-mono bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          R2 Stream
+        </span>
+      </div>
+
+      <!-- Reproductor Nativo HTML5 con Soporte Range -->
+      <div class="w-full">
+        <audio id="audioPlayer" controls class="w-full rounded-lg outline-none accent-brand-500"></audio>
+      </div>
+
+      <!-- Enlace directo para compartir y detalles técnicos -->
+      <div class="bg-surface-800 border border-surface-700 rounded-xl p-3 flex flex-col gap-2">
+        <div class="flex items-center justify-between text-xs text-slate-400">
+          <span class="font-medium text-slate-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-link text-brand-500"></i>
+            Enlace de Streaming Directo (Playback URL)
+          </span>
+          <span id="fileIdBadge" class="font-mono text-[10px] bg-surface-700 px-2 py-0.5 rounded text-slate-300">file_id: ...</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <input 
+            type="text" 
+            id="playbackUrlInput" 
+            readonly 
+            class="flex-1 bg-surface-900 border border-surface-700 rounded-lg px-3 py-1.5 text-xs text-slate-300 font-mono select-all focus:outline-none"
+          >
+          <button 
+            type="button" 
+            id="btnCopyUrl" 
+            class="bg-surface-700 hover:bg-surface-650 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition active:scale-95"
+          >
+            <i class="fa-regular fa-copy"></i>
+            <span>Copiar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historial de Canciones Subidas (Persistidas en LocalStorage) -->
+    <div class="bg-surface-850 border border-surface-700/80 rounded-2xl p-5 shadow-xl flex flex-col gap-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+          <i class="fa-solid fa-list-ul text-slate-400"></i>
+          Historial de Canciones en Cold Storage
+        </h3>
+        <button id="btnClearHistory" class="text-xs text-slate-400 hover:text-red-400 transition">
+          Limpiar historial
+        </button>
+      </div>
+
+      <div id="historyList" class="flex flex-col gap-2 max-h-60 overflow-y-auto custom-scrollbar">
+        <!-- Renderizado dinámico vía JS -->
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="border-t border-surface-800 py-4 text-center text-xs text-slate-500">
+    Spotyy_AA &bull; Sistema de Caché R2 + Telegram Cold Storage &bull; Límite API 20 MB
+  </footer>
+
+  <script>
+    // ==========================================
+    // ESTADO Y REFERENCIAS DEL DOM
+    // ==========================================
+    const DEFAULT_WORKER_URL = 'https://musica-bot.perezperezaaron61.workers.dev';
+    
+    // Elementos
+    const workerBaseUrlInput = document.getElementById('workerBaseUrl');
+    const btnSaveUrl = document.getElementById('btnSaveUrl');
+    const dropzone = document.getElementById('dropzone');
+    const audioFileInput = document.getElementById('audioFileInput');
+    const fileSelectedBadge = document.getElementById('fileSelectedBadge');
+    const dropzoneText = document.getElementById('dropzoneText');
+    const fileNameEl = document.getElementById('fileName');
+    const fileSizeEl = document.getElementById('fileSize');
+    const btnRemoveFile = document.getElementById('btnRemoveFile');
+    const titleInput = document.getElementById('titleInput');
+    const performerInput = document.getElementById('performerInput');
+    const uploadForm = document.getElementById('uploadForm');
+    const btnSubmit = document.getElementById('btnSubmit');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const progressPercent = document.getElementById('progressPercent');
+    const progressStatus = document.getElementById('progressStatus');
+    const alertBox = document.getElementById('alertBox');
+    const alertIcon = document.getElementById('alertIcon');
+    const alertTitle = document.getElementById('alertTitle');
+    const alertMessage = document.getElementById('alertMessage');
+    const btnCloseAlert = document.getElementById('btnCloseAlert');
+    const playerCard = document.getElementById('playerCard');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const currentTrackTitle = document.getElementById('currentTrackTitle');
+    const currentTrackArtist = document.getElementById('currentTrackArtist');
+    const playbackUrlInput = document.getElementById('playbackUrlInput');
+    const fileIdBadge = document.getElementById('fileIdBadge');
+    const btnCopyUrl = document.getElementById('btnCopyUrl');
+    const historyList = document.getElementById('historyList');
+    const btnClearHistory = document.getElementById('btnClearHistory');
+
+    let selectedFile = null;
+
+    // ==========================================
+    // INICIALIZACIÓN
+    // ==========================================
+    function init() {
+      const savedUrl = localStorage.getItem('spotyy_worker_url') || DEFAULT_WORKER_URL;
+      workerBaseUrlInput.value = savedUrl;
+      renderHistory();
+    }
+
+    btnSaveUrl.addEventListener('click', () => {
+      let url = workerBaseUrlInput.value.trim().replace(/\/+$/, '');
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+      }
+      workerBaseUrlInput.value = url;
+      localStorage.setItem('spotyy_worker_url', url);
+      showAlert('success', 'Configuración guardada', `URL del Worker configurada como: ${url}`);
+    });
+
+    // ==========================================
+    // GESTIÓN DE ARCHIVOS (DROPZONE Y SELECCIÓN)
+    // ==========================================
+    dropzone.addEventListener('click', (e) => {
+      if (e.target.closest('#btnRemoveFile')) return;
+      audioFileInput.click();
+    });
+
+    ['dragenter', 'dragover'].forEach(evt => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('border-brand-500', 'bg-surface-800/80');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(evt => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('border-brand-500', 'bg-surface-800/80');
+      });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        handleFileSelection(e.dataTransfer.files[0]);
+      }
+    });
+
+    audioFileInput.addEventListener('change', () => {
+      if (audioFileInput.files && audioFileInput.files.length > 0) {
+        handleFileSelection(audioFileInput.files[0]);
+      }
+    });
+
+    btnRemoveFile.addEventListener('click', (e) => {
+      e.stopPropagation();
+      clearFileSelection();
+    });
+
+    function handleFileSelection(file) {
+      if (!file.type.startsWith('audio/') && !file.name.match(/\.(mp3|m4a|wav|ogg|flac|aac)$/i)) {
+        showAlert('error', 'Formato no soportado', 'Por favor selecciona un archivo de audio válido (.mp3, .m4a, .wav, .ogg).');
+        return;
+      }
+
+      // Validar límite de 20 MB en cliente
+      const sizeMB = file.size / (1024 * 1024);
+      if (sizeMB > 20) {
+        showAlert(
+          'error', 
+          'Límite de 20 MB excedido', 
+          `El archivo pesa ${sizeMB.toFixed(2)} MB. La API pública de Telegram rechaza descargas de más de 20 MB. Selecciona un archivo menor a 20 MB.`
+        );
+        return;
+      }
+
+      selectedFile = file;
+      fileNameEl.textContent = file.name;
+      fileSizeEl.textContent = `(${sizeMB.toFixed(2)} MB)`;
+      dropzoneText.classList.add('hidden');
+      fileSelectedBadge.classList.remove('hidden');
+
+      // Autocompletar título si está vacío
+      if (!titleInput.value) {
+        const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/_/g, ' ');
+        titleInput.value = cleanName;
+      }
+
+      hideAlert();
+    }
+
+    function clearFileSelection() {
+      selectedFile = null;
+      audioFileInput.value = '';
+      dropzoneText.classList.remove('hidden');
+      fileSelectedBadge.classList.add('hidden');
+    }
+
+    // ==========================================
+    // ENVÍO AL CLOUDFLARE WORKER (FETCH API)
+    // ==========================================
+    uploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!selectedFile) {
+        showAlert('error', 'Falta el archivo', 'Por favor selecciona o arrastra una canción en formato MP3.');
+        return;
+      }
+
+      const workerBase = workerBaseUrlInput.value.trim().replace(/\/+$/, '');
+      if (!workerBase) {
+        showAlert('error', 'Servidor no configurado', 'Ingresa la URL base de tu Cloudflare Worker.');
+        return;
+      }
+
+      const uploadUrl = `${workerBase}/upload-cold-storage`;
+      const formData = new FormData();
+      formData.append('audio', selectedFile);
+      formData.append('title', titleInput.value.trim() || selectedFile.name);
+      formData.append('performer', performerInput.value.trim() || 'Artista Desconocido');
+
+      // UI: Estado de Carga
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Subiendo y procesando...`;
+      progressContainer.classList.remove('hidden');
+      progressBar.style.width = '30%';
+      progressPercent.textContent = '30%';
+      progressStatus.innerHTML = `<i class="fa-solid fa-cloud-arrow-up text-brand-500 animate-pulse"></i> Transfiriendo a Telegram Cold Storage...`;
+      hideAlert();
+
+      try {
+        // Simular progreso de red visual mientras el Worker responde
+        const progressTimer = setInterval(() => {
+          const current = parseInt(progressBar.style.width) || 30;
+          if (current < 85) {
+            const next = current + 15;
+            progressBar.style.width = next + '%';
+            progressPercent.textContent = next + '%';
+          }
+        }, 500);
+
+        const response = await fetch(uploadUrl, {
+          method: 'POST',
+          body: formData,
+        });
+
+        clearInterval(progressTimer);
+        progressBar.style.width = '100%';
+        progressPercent.textContent = '100%';
+
+        const result = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          if (response.status === 413) {
+            throw new Error(`El archivo supera el límite de 20 MB permitido por la API pública de Telegram.`);
+          }
+          const errDetail = result?.error || result?.description || `Error del servidor (HTTP ${response.status})`;
+          throw new Error(errDetail);
+        }
+
+        if (!result || !result.success) {
+          throw new Error(result?.error || 'Respuesta inválida del servidor.');
+        }
+
+        // ==========================================
+        // ÉXITO: MOSTRAR REPRODUCTOR
+        // ==========================================
+        showAlert('success', '¡Canción subida con éxito!', 'El audio fue respaldado en Telegram y está listo para reproducir en streaming.');
+
+        const songData = {
+          id: result.file_id || Date.now().toString(),
+          title: titleInput.value.trim() || selectedFile.name,
+          artist: performerInput.value.trim() || 'Artista',
+          playback_url: result.playback_url,
+          file_id: result.file_id,
+          date: new Date().toLocaleString()
+        };
+
+        playSong(songData);
+        saveToHistory(songData);
+        clearFileSelection();
+
+      } catch (err) {
+        console.error('Error al subir:', err);
+        showAlert('error', 'Error en la subida', err.message || 'No se pudo conectar con el Cloudflare Worker. Verifica la URL y los CORS.');
+      } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = `<i class="fa-solid fa-cloud-arrow-up text-white text-base"></i> <span class="tracking-wide">Subir a la nube</span>`;
+        setTimeout(() => {
+          progressContainer.classList.add('hidden');
+          progressBar.style.width = '0%';
+        }, 1200);
+      }
+    });
+
+    // ==========================================
+    // REPRODUCTOR DE MÚSICA
+    // ==========================================
+    function playSong(song) {
+      playerCard.classList.remove('hidden');
+      currentTrackTitle.textContent = song.title;
+      currentTrackArtist.textContent = song.artist;
+      playbackUrlInput.value = song.playback_url;
+      fileIdBadge.textContent = `file_id: ${song.file_id || 'N/A'}`;
+
+      // Configurar fuente de audio y reproducir
+      audioPlayer.src = song.playback_url;
+      audioPlayer.load();
+      audioPlayer.play().catch(err => {
+        console.warn('Auto-play prevenido por el navegador, haz clic en play:', err);
+      });
+
+      playerCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // Copiar URL de reproducción
+    btnCopyUrl.addEventListener('click', async () => {
+      if (!playbackUrlInput.value) return;
+      try {
+        await navigator.clipboard.writeText(playbackUrlInput.value);
+        const originalHTML = btnCopyUrl.innerHTML;
+        btnCopyUrl.innerHTML = `<i class="fa-solid fa-check text-brand-500"></i> Copiado`;
+        setTimeout(() => {
+          btnCopyUrl.innerHTML = originalHTML;
+        }, 2000);
+      } catch (e) {
+        playbackUrlInput.select();
+        document.execCommand('copy');
+      }
+    });
+
+    // ==========================================
+    // HISTORIAL LOCAL (LOCALSTORAGE)
+    // ==========================================
+    function getHistory() {
+      try {
+        return JSON.parse(localStorage.getItem('spotyy_history') || '[]');
+      } catch {
+        return [];
+      }
+    }
+
+    function saveToHistory(song) {
+      const history = getHistory();
+      // Evitar duplicados por file_id
+      const filtered = history.filter(s => s.file_id !== song.file_id);
+      filtered.unshift(song);
+      localStorage.setItem('spotyy_history', JSON.stringify(filtered.slice(0, 30)));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const history = getHistory();
+      if (history.length === 0) {
+        historyList.innerHTML = `
+          <div class="text-center py-6 text-xs text-slate-500">
+            No has subido canciones aún en esta sesión.
+          </div>
+        `;
+        return;
+      }
+
+      historyList.innerHTML = history.map(song => `
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-800 hover:bg-surface-700/80 transition group border border-surface-700/50">
+          <div class="flex items-center gap-3 overflow-hidden">
+            <button onclick="playFromHistory('${song.file_id}')" class="w-8 h-8 rounded-lg bg-surface-700 group-hover:bg-brand-500 group-hover:text-black text-slate-300 flex items-center justify-center transition flex-shrink-0">
+              <i class="fa-solid fa-play text-xs"></i>
+            </button>
+            <div class="truncate">
+              <h4 class="text-xs font-semibold text-slate-200 truncate">${escapeHtml(song.title)}</h4>
+              <p class="text-[11px] text-slate-400 truncate">${escapeHtml(song.artist)} &bull; <span class="text-[10px] text-slate-500">${song.date || ''}</span></p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <a href="${song.playback_url}" target="_blank" class="text-xs text-slate-400 hover:text-brand-500 px-2 py-1" title="Abrir stream directo">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.playFromHistory = function(fileId) {
+      const history = getHistory();
+      const song = history.find(s => s.file_id === fileId);
+      if (song) playSong(song);
+    };
+
+    btnClearHistory.addEventListener('click', () => {
+      if (confirm('¿Deseas vaciar el historial de canciones guardadas en este navegador?')) {
+        localStorage.removeItem('spotyy_history');
+        renderHistory();
+      }
+    });
+
+    // ==========================================
+    // ALERTAS
+    // ==========================================
+    function showAlert(type, title, message) {
+      alertBox.classList.remove('hidden', 'bg-red-950/60', 'border-red-500/40', 'text-red-300', 'bg-emerald-950/60', 'border-emerald-500/40', 'text-emerald-300');
+      
+      if (type === 'error') {
+        alertBox.classList.add('bg-red-950/60', 'border-red-500/40', 'text-red-300');
+        alertIcon.className = 'fa-solid fa-circle-exclamation text-red-400 text-base mt-0.5';
+      } else {
+        alertBox.classList.add('bg-emerald-950/60', 'border-emerald-500/40', 'text-emerald-300');
+        alertIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-base mt-0.5';
+      }
+
+      alertTitle.textContent = title;
+      alertMessage.textContent = message;
+    }
+
+    function hideAlert() {
+      alertBox.classList.add('hidden');
+    }
+
+    btnCloseAlert.addEventListener('click', hideAlert);
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Iniciar
+    init();
+  </script>
+</body>
+</html>

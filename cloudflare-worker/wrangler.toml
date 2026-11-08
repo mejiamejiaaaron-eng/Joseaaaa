@@ -1,0 +1,17 @@
+name = "spotyy-r2-telegram-cache"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Vinculación del Bucket de Cloudflare R2
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "musica" # Nombre de tu bucket R2 en Cloudflare
+
+# Variables de entorno públicas
+[vars]
+TELEGRAM_API_ROOT = "https://api.telegram.org"
+TELEGRAM_CHAT_ID = "-1003870072472"
+
+# NOTA: Configura el token secreto de tu bot ejecutando:
+# npx wrangler secret put TELEGRAM_BOT_TOKEN
+

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGradMask" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#141414"/>
+      <stop offset="50%" stop-color="#121212"/>
+      <stop offset="100%" stop-color="#1A0808"/>
+    </linearGradient>
+    <linearGradient id="blueGradMask" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa"/>
+      <stop offset="50%" stop-color="#1E90FF"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="pinkGradMask" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4081"/>
+      <stop offset="50%" stop-color="#E91E63"/>
+      <stop offset="100%" stop-color="#c2185b"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#bgGradMask)"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="url(#blueGradMask)" stroke-width="3" opacity="0.8"/>
+  <circle cx="256" cy="256" r="125" fill="#181818" stroke="#D32F2F" stroke-width="3"/>
+  <path d="M 205 190 L 260 190 L 260 210 L 225 210 L 225 240 L 252 240 L 252 260 L 225 260 L 225 318 L 205 318 Z" fill="url(#pinkGradMask)"/>
+  <path d="M 270 318 L 287 268 L 313 268 L 330 318 L 352 318 L 312 190 L 292 190 L 250 318 Z M 300 226 L 309 252 L 292 252 Z" fill="url(#blueGradMask)"/>
+  <text x="256" y="360" font-family="'Inter', sans-serif" font-size="18" font-weight="800" fill="#1E90FF" text-anchor="middle" letter-spacing="3">Spotyy_AA</text>
+</svg>

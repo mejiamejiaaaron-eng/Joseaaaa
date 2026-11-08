@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Subir Música a la Nube (Telegram)</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            telegram: {
+              400: '#2AABEE',
+              500: '#229ED9',
+              600: '#1D88BC',
+            },
+            dark: {
+              900: '#0B0E14',
+              800: '#151922',
+              700: '#222736',
+              600: '#2F3649'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <style>
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.03); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .pulse-animation {
+      animation: pulse-ring 2.5s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-dark-900 text-slate-100 min-h-screen flex items-center justify-center p-4 sm:p-6 font-sans">
+
+  <!-- Contenedor Principal del Componente -->
+  <div class="w-full max-w-xl bg-dark-800 border border-dark-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/60 relative overflow-hidden">
+    
+    <!-- Efecto de Fondo Decorativo -->
+    <div class="absolute -top-24 -right-24 w-52 h-52 bg-telegram-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -left-24 w-52 h-52 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- 1. Encabezado Llamativo -->
+    <header class="text-center mb-6">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-telegram-600 to-telegram-400 text-white shadow-lg shadow-telegram-500/30 mb-3 pulse-animation">
+        <i class="fa-brands fa-telegram text-2xl"></i>
+      </div>
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+        Subir Música a la Nube (Telegram)
+      </h1>
+      <p class="text-xs sm:text-sm text-slate-400 mt-1">
+        Almacenamiento en frío ilimitado y reproducción streaming instantánea
+      </p>
+    </header>
+
+    <!-- Configuración Rápida de la URL del Worker -->
+    <div class="mb-5 bg-dark-900/70 border border-dark-700 rounded-2xl p-3 flex items-center gap-2 text-xs">
+      <i class="fa-solid fa-server text-telegram-400 pl-1"></i>
+      <span class="text-slate-400 font-medium whitespace-nowrap">Worker:</span>
+      <input 
+        type="text" 
+        id="workerUrlInput" 
+        value="https://musica-bot.perezperezaaron61.workers.dev"
+        placeholder="https://tu-worker.workers.dev"
+        class="bg-transparent border-none text-slate-200 text-xs font-mono w-full focus:outline-none placeholder-slate-600 truncate"
+      >
+    </div>
+
+    <!-- Formulario de Subida -->
+    <form id="uploadForm" class="flex flex-col gap-4">
+
+      <!-- 2. Área Visual Grande para Arrastrar y Soltar (Drag & Drop) -->
+      <div 
+        id="dropzone" 
+        class="border-2 border-dashed border-dark-600 hover:border-telegram-400 bg-dark-900/60 hover:bg-dark-700/40 rounded-2xl p-6 sm:p-8 text-center transition-all duration-200 cursor-pointer flex flex-col items-center justify-center gap-3 group relative"
+      >
+        <input 
+          type="file" 
+          id="audioFileInput" 
+          accept="audio/*,.mp3,.m4a,.wav,.ogg" 
+          class="hidden"
+        >
+
+        <div class="w-16 h-16 rounded-full bg-dark-700 group-hover:bg-telegram-500/20 group-hover:text-telegram-400 text-slate-400 flex items-center justify-center transition-all duration-200">
+          <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+        </div>
+
+        <div id="dropzonePrompt">
+          <p class="text-sm sm:text-base font-semibold text-slate-200 group-hover:text-white transition">
+            Arrastra tu archivo MP3 aquí
+          </p>
+          <p class="text-xs text-slate-400 mt-1">
+            o haz clic para explorar en tu dispositivo
+          </p>
+          <span class="inline-block mt-2 text-[11px] font-medium bg-dark-700 text-slate-300 px-3 py-1 rounded-full border border-dark-600">
+            Límite máximo: 20 MB
+          </span>
+        </div>
+
+        <!-- 3. Información del Archivo Seleccionado -->
+        <div id="fileInfoCard" class="hidden w-full bg-dark-800 border border-telegram-500/40 rounded-xl p-3 flex items-center justify-between gap-3 text-left">
+          <div class="flex items-center gap-3 overflow-hidden">
+            <div class="w-10 h-10 rounded-lg bg-telegram-500/20 text-telegram-400 flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-file-audio text-lg"></i>
+            </div>
+            <div class="truncate">
+              <p id="selectedFileName" class="text-xs sm:text-sm font-bold text-white truncate">cancion.mp3</p>
+              <p id="selectedFileSize" class="text-[11px] text-telegram-400 font-mono">0.0 MB</p>
+            </div>
+          </div>
+          <button 
+            type="button" 
+            id="btnRemoveFile" 
+            class="text-slate-400 hover:text-red-400 p-2 rounded-lg hover:bg-dark-700 transition" 
+            title="Quitar archivo"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 4. Inputs de Texto: Título y Artista -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label for="titleInput" class="block text-xs font-semibold text-slate-300 mb-1.5">
+            Título de la canción
+          </label>
+          <div class="relative">
+            <i class="fa-solid fa-music absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+            <input 
+              type="text" 
+              id="titleInput" 
+              placeholder="Ej. Ella Baila Sola" 
+              class="w-full bg-dark-900 border border-dark-700 rounded-xl pl-9 pr-3 py-2.5 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-telegram-400 transition"
+            >
+          </div>
+        </div>
+        <div>
+          <label for="performerInput" class="block text-xs font-semibold text-slate-300 mb-1.5">
+            Artista
+          </label>
+          <div class="relative">
+            <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+            <input 
+              type="text" 
+              id="performerInput" 
+              placeholder="Ej. Peso Pluma" 
+              class="w-full bg-dark-900 border border-dark-700 rounded-xl pl-9 pr-3 py-2.5 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-telegram-400 transition"
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- 5 y 7. Botón Grande de Subida y Estado de Carga -->
+      <button 
+        type="submit" 
+        id="btnSubmit" 
+        disabled
+        class="mt-2 w-full bg-gradient-to-r from-telegram-600 via-telegram-500 to-sky-400 hover:from-telegram-500 hover:to-sky-300 disabled:from-dark-700 disabled:to-dark-700 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-telegram-500/25 disabled:shadow-none transition-all duration-200 flex items-center justify-center gap-2.5 text-sm sm:text-base cursor-pointer"
+      >
+        <i id="btnIcon" class="fa-brands fa-telegram text-lg"></i>
+        <span id="btnText">Subir a Telegram</span>
+      </button>
+
+    </form>
+
+    <!-- 6 y 9. Tarjeta Roja de Error (Alerta) -->
+    <div 
+      id="errorCard" 
+      class="hidden mt-5 bg-red-950/70 border border-red-500/50 rounded-2xl p-4 text-red-200 text-xs sm:text-sm flex items-start gap-3 shadow-lg"
+    >
+      <div class="w-8 h-8 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div class="flex-1">
+        <h4 class="font-bold text-red-100 text-sm">Error al procesar el archivo</h4>
+        <p id="errorMessage" class="text-red-300 mt-0.5 leading-relaxed">Mensaje de error.</p>
+      </div>
+      <button type="button" id="btnCloseError" class="text-red-400 hover:text-white p-1">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- 8. Tarjeta Verde de Éxito con Reproductor HTML5 -->
+    <div 
+      id="successCard" 
+      class="hidden mt-5 bg-emerald-950/80 border border-emerald-500/50 rounded-2xl p-5 shadow-xl flex flex-col gap-4 text-emerald-100"
+    >
+      <div class="flex items-center justify-between border-b border-emerald-500/20 pb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-white">¡Archivo respaldado con éxito!</h4>
+            <p id="successTrackName" class="text-xs text-emerald-300">Canción subida a Telegram Cold Storage</p>
+          </div>
+        </div>
+        <span class="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">
+          Enlace Listo
+        </span>
+      </div>
+
+      <!-- Reproductor HTML5 -->
+      <div class="w-full">
+        <audio id="audioPlayer" controls class="w-full rounded-lg outline-none accent-emerald-500"></audio>
+      </div>
+
+      <!-- Enlace Directo y Botón Copiar -->
+      <div class="bg-dark-900/80 border border-emerald-500/30 rounded-xl p-2.5 flex items-center gap-2">
+        <input 
+          type="text" 
+          id="playbackUrlText" 
+          readonly 
+          class="flex-1 bg-transparent text-slate-300 text-xs font-mono px-2 py-1 focus:outline-none select-all truncate"
+        >
+        <button 
+          type="button" 
+          id="btnCopyUrl" 
+          class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer flex-shrink-0"
+        >
+          <i class="fa-regular fa-copy"></i>
+          <span id="copyText">Copiar enlace</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- LÓGICA DE JAVASCRIPT VANILLA -->
+  <script>
+    // Referencias del DOM
+    const workerUrlInput = document.getElementById('workerUrlInput');
+    const dropzone = document.getElementById('dropzone');
+    const audioFileInput = document.getElementById('audioFileInput');
+    const dropzonePrompt = document.getElementById('dropzonePrompt');
+    const fileInfoCard = document.getElementById('fileInfoCard');
+    const selectedFileName = document.getElementById('selectedFileName');
+    const selectedFileSize = document.getElementById('selectedFileSize');
+    const btnRemoveFile = document.getElementById('btnRemoveFile');
+    const titleInput = document.getElementById('titleInput');
+    const performerInput = document.getElementById('performerInput');
+    const uploadForm = document.getElementById('uploadForm');
+    const btnSubmit = document.getElementById('btnSubmit');
+    const btnIcon = document.getElementById('btnIcon');
+    const btnText = document.getElementById('btnText');
+    const errorCard = document.getElementById('errorCard');
+    const errorMessage = document.getElementById('errorMessage');
+    const btnCloseError = document.getElementById('btnCloseError');
+    const successCard = document.getElementById('successCard');
+    const successTrackName = document.getElementById('successTrackName');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const playbackUrlText = document.getElementById('playbackUrlText');
+    const btnCopyUrl = document.getElementById('btnCopyUrl');
+    const copyText = document.getElementById('copyText');
+
+    let currentFile = null;
+
+    // Abrir selector al hacer clic en el dropzone
+    dropzone.addEventListener('click', (e) => {
+      if (e.target.closest('#btnRemoveFile')) return;
+      audioFileInput.click();
+    });
+
+    // Gestión del Drag & Drop
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('border-telegram-400', 'bg-dark-700/60');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('border-telegram-400', 'bg-dark-700/60');
+      });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        processSelectedFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    audioFileInput.addEventListener('change', () => {
+      if (audioFileInput.files && audioFileInput.files.length > 0) {
+        processSelectedFile(audioFileInput.files[0]);
+      }
+    });
+
+    // Quitar archivo
+    btnRemoveFile.addEventListener('click', (e) => {
+      e.stopPropagation();
+      resetFileSelection();
+    });
+
+    // Cerrar alerta de error
+    btnCloseError.addEventListener('click', () => {
+      errorCard.classList.add('hidden');
+    });
+
+    // Procesar y Validar Archivo
+    function processSelectedFile(file) {
+      hideAlerts();
+
+      // Validación de tipo
+      const validExtensions = /\.(mp3|m4a|wav|ogg|flac|aac)$/i;
+      if (!file.type.startsWith('audio/') && !file.name.match(validExtensions)) {
+        showError('El archivo seleccionado no es un formato de audio compatible (.mp3, .m4a, .wav, .ogg).');
+        resetFileSelection();
+        return;
+      }
+
+      // 6. VALIDACIÓN CRÍTICA: Límite de 20 MB
+      const fileSizeMB = file.size / (1024 * 1024);
+      if (fileSizeMB > 20) {
+        showError(
+          `El archivo pesa ${fileSizeMB.toFixed(2)} MB. Telegram rechaza descargas de más de 20 MB a través de su API pública. Por favor, selecciona un archivo menor a 20 MB.`
+        );
+        resetFileSelection();
+        return;
+      }
+
+      // Archivo Válido: Actualizar UI
+      currentFile = file;
+      selectedFileName.textContent = file.name;
+      selectedFileSize.textContent = `${fileSizeMB.toFixed(2)} MB`;
+
+      dropzonePrompt.classList.add('hidden');
+      fileInfoCard.classList.remove('hidden');
+
+      // Autocompletar título si está en blanco
+      if (!titleInput.value.trim()) {
+        titleInput.value = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+      }
+
+      // Habilitar botón de subida
+      btnSubmit.disabled = false;
+    }
+
+    function resetFileSelection() {
+      currentFile = null;
+      audioFileInput.value = '';
+      dropzonePrompt.classList.remove('hidden');
+      fileInfoCard.classList.add('hidden');
+      btnSubmit.disabled = true;
+    }
+
+    // 7. ENVÍO DE DATOS CON FETCH Y ASYNC/AWAIT
+    uploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!currentFile) {
+        showError('Por favor selecciona un archivo de audio primero.');
+        return;
+      }
+
+      const workerBaseUrl = workerUrlInput.value.trim().replace(/\/+$/, '');
+      if (!workerBaseUrl) {
+        showError('Debes ingresar la URL de tu Cloudflare Worker.');
+        return;
+      }
+
+      const endpoint = `${workerBaseUrl}/upload-cold-storage`;
+
+      // Construcción del FormData
+      const formData = new FormData();
+      formData.append('audio', currentFile);
+      formData.append('title', titleInput.value.trim() || currentFile.name);
+      formData.append('performer', performerInput.value.trim() || 'Artista Desconocido');
+
+      // Estado de carga (Loading)
+      setLoadingState(true);
+      hideAlerts();
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          if (response.status === 413) {
+            throw new Error('El servidor rechazó el archivo por superar el límite de 20 MB (HTTP 413).');
+          }
+          const serverMessage = data?.description || data?.error || `Error del servidor (HTTP ${response.status})`;
+          throw new Error(serverMessage);
+        }
+
+        if (!data || !data.success) {
+          throw new Error(data?.error || data?.description || 'Ocurrió un error inesperado al guardar en Telegram.');
+        }
+
+        // 8. ÉXITO: Mostrar tarjeta verde con reproductor
+        showSuccess(data);
+        resetFileSelection();
+
+      } catch (err) {
+        console.error('Error durante la subida:', err);
+        showError(err.message || 'No fue posible conectarse con el servidor. Verifica tu conexión y los CORS de Cloudflare.');
+      } finally {
+        setLoadingState(false);
+      }
+    });
+
+    // Control del Estado del Botón (Carga)
+    function setLoadingState(isLoading) {
+      if (isLoading) {
+        btnSubmit.disabled = true;
+        btnIcon.className = 'fa-solid fa-circle-notch fa-spin text-lg';
+        btnText.textContent = 'Subiendo...';
+      } else {
+        btnSubmit.disabled = !currentFile;
+        btnIcon.className = 'fa-brands fa-telegram text-lg';
+        btnText.textContent = 'Subir a Telegram';
+      }
+    }
+
+    // Mostrar Tarjeta de Error
+    function showError(msg) {
+      errorMessage.textContent = msg;
+      errorCard.classList.remove('hidden');
+      successCard.classList.add('hidden');
+      errorCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // Mostrar Tarjeta de Éxito
+    function showSuccess(data) {
+      errorCard.classList.add('hidden');
+      successCard.classList.remove('hidden');
+      successTrackName.textContent = `${titleInput.value.trim() || 'Canción'} - ${performerInput.value.trim() || 'Artista'}`;
+
+      // Configurar y cargar reproductor HTML5
+      audioPlayer.src = data.playback_url;
+      audioPlayer.load();
+
+      // Configurar enlace para copiar
+      playbackUrlText.value = data.playback_url;
+
+      successCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function hideAlerts() {
+      errorCard.classList.add('hidden');
+      successCard.classList.add('hidden');
+    }
+
+    // Copiar Enlace al Portapapeles
+    btnCopyUrl.addEventListener('click', async () => {
+      const url = playbackUrlText.value;
+      if (!url) return;
+
+      try {
+        await navigator.clipboard.writeText(url);
+        copyText.textContent = '¡Copiado!';
+        btnCopyUrl.classList.replace('bg-emerald-600', 'bg-emerald-700');
+        setTimeout(() => {
+          copyText.textContent = 'Copiar enlace';
+          btnCopyUrl.classList.replace('bg-emerald-700', 'bg-emerald-600');
+        }, 2000);
+      } catch (err) {
+        playbackUrlText.select();
+        document.execCommand('copy');
+        copyText.textContent = '¡Copiado!';
+        setTimeout(() => { copyText.textContent = 'Copiar enlace'; }, 2000);
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "Spotyy_AA",
+  "description": "Reproductor musical premium y sistema independiente Spotyy_AA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
